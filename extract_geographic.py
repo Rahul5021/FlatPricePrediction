@@ -6,45 +6,56 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Function to geocode a location using OpenCage Geocoding API
-def get_lat_long(location, api_key):
+def get_lat_long_and_state(location, api_key):
     geocoder = OpenCageGeocode(api_key)
     result = geocoder.geocode(location)
     
     if result:
-        # Get the latitude and longitude from the first result
+        # Get the latitude, longitude, and state from the result
         lat = result[0]['geometry']['lat']
         lng = result[0]['geometry']['lng']
-        return lat, lng
+        components = result[0].get('components', {})
+        state = components.get('state', None)  # Extract the state
+        return lat, lng, state
     else:
         # Return None if no result is found
-        return None, None
+        return None, None, None
 
 # Load your dataset (adjust the path to your file)
-data = pd.read_csv('D:\Data Science\Projects\FlatPricePrediction\data\clean.csv')  # Adjust path as needed
+data = pd.read_csv('D:\\Data Science\\Projects\\FlatPricePrediction\\data\\clean.csv')  # Adjust path as needed
 
-# Extract unique locations (assuming 'location' is the column containing location names)
+# Extract unique locations (assuming 'Location' is the column containing location names)
 locations = data['Location'].unique()
 
 # Set your OpenCage API key (replace with your actual API key)
 api_key = os.getenv('OPENCAGE_API_KEY')
 
-# Dictionary to store latitudes and longitudes for each location
+if not api_key:
+    raise ValueError("API key not found in .env file.")
+
+# Dictionary to store latitudes, longitudes, and states for each location
 location_coords = {}
 
-# Loop through each unique location, get its latitude and longitude, and store it
-for location in locations:
-    if location not in location_coords:
-        lat, lng = get_lat_long(location, api_key)
-        location_coords[location] = (lat, lng)
-        
-    # Sleep for a short period to avoid exceeding API request limits
-    time.sleep(1)  # Adjust sleep time if needed
+# Log file to manually check results
+with open('geocode_log.txt', 'w') as log_file:
+    # Loop through each unique location, get its latitude, longitude, and state, and store it
+    for location in locations:
+        if location not in location_coords:
+            lat, lng, state = get_lat_long_and_state(f"{location}, India", api_key)
+            location_coords[location] = {'latitude': lat, 'longitude': lng, 'state': state}
+            
+            # Log the result for manual verification
+            log_file.write(f"{location}: Lat={lat}, Lng={lng}, State={state}\n")
+            
+        # Sleep for a short period to avoid exceeding API request limits
+        time.sleep(1)  # Adjust sleep time if needed
 
-# Add latitude and longitude columns to the original dataset
-data['latitude'] = data['Location'].map(lambda x: location_coords.get(x, (None, None))[0])
-data['longitude'] = data['Location'].map(lambda x: location_coords.get(x, (None, None))[1])
+# Add latitude, longitude, and state columns to the original dataset
+data['latitude'] = data['Location'].map(lambda x: location_coords.get(x, {}).get('latitude'))
+data['longitude'] = data['Location'].map(lambda x: location_coords.get(x, {}).get('longitude'))
+data['state'] = data['Location'].map(lambda x: location_coords.get(x, {}).get('state'))
 
 # Save the updated DataFrame to a new CSV file
-data.to_csv('D:\Data Science\Projects\FlatPricePrediction\data\clean.csv', index=False)
+data.to_csv('data_with_coordinates_and_states.csv', index=False)
 
-print("Geocoding complete and coordinates added to the dataset.")
+print("Geocoding complete. Coordinates and state information added to the dataset.")
