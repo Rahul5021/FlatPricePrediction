@@ -1,6 +1,9 @@
 import pandas as pd
 from opencage.geocoder import OpenCageGeocode
 import time
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # Function to geocode a location using OpenCage Geocoding API
 def get_lat_long(location, api_key):
@@ -23,7 +26,7 @@ data = pd.read_csv('D:\Data Science\Projects\FlatPricePrediction\data\clean.csv'
 locations = data['Location'].unique()
 
 # Set your OpenCage API key (replace with your actual API key)
-api_key = '6cb8fd2d1e394d2aa8ca1fb5cb122d22'
+api_key = os.getenv('OPENCAGE_API_KEY')
 
 # Dictionary to store latitudes and longitudes for each location
 location_coords = {}
