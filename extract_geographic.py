@@ -56,6 +56,6 @@ data['longitude'] = data['Location'].map(lambda x: location_coords.get(x, {}).ge
 data['state'] = data['Location'].map(lambda x: location_coords.get(x, {}).get('state'))
 
 # Save the updated DataFrame to a new CSV file
-data.to_csv('data_with_coordinates_and_states.csv', index=False)
+data.to_csv('D:\\Data Science\\Projects\\FlatPricePrediction\\data\\clean.csv', index=False)
 
 print("Geocoding complete. Coordinates and state information added to the dataset.")
